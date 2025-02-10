@@ -45,10 +45,12 @@ class MangaDexDownloader:
             return
         # Download chapter
         os.makedirs(chapter_path, exist_ok=True)
-        print(f"Downloading chapter {chapter_number}...")
+        print(f"\nChapter {chapter_number}:\n")
+
         for page in pages:
             page_url = f"{base}/{page}"
             self.download_image(page_url, os.path.join(chapter_path, page))
+            print(f"Downloaded {os.path.join(chapter_path, page)}")
 
     def download_image(self, url, save_path):
         response = requests.get(url, stream=True)
@@ -56,9 +58,8 @@ class MangaDexDownloader:
             with open(save_path, "wb") as f:
                 for chunk in response.iter_content(1024):
                     f.write(chunk)
-            print(f"Downloaded {save_path}")
         else:
             print(f"Failed to download {url}")
 
-    def download_manga(self):
-        [self.download_chapter(chapter) for chapter in self.get_chapters()]
+    def download_manga(self, start=0):
+        [self.download_chapter(chapter) for chapter in self.get_chapters()[start:]]
