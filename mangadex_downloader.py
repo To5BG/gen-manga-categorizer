@@ -20,30 +20,32 @@ class MangaDexDownloader:
                 "limit": 500,
             },
         )
-        return response.json().get("data", []) if response.status_code == 200 else []
+        return response.json().get("data") if response.status_code == 200 else []
 
     def get_pages(self, chapter_id: str):
         url = f"{MANGADEX_API}/at-home/server/{chapter_id}"
         response = requests.get(url)
         if response.status_code == 200:
             json = response.json()
-            return json.get("baseUrl") + "/data/" + json.get("chapter").get(
-                "hash"
-            ), json.get("chapter").get("data")
+            base = json.get("baseUrl") + "/data/" + json.get("chapter").get("hash")
+            return base, json.get("chapter").get("data")
         return "", []
 
     def download_chapter(self, chapter):
-        chapter_id = chapter["id"]
+        # Init
         chapter_number = chapter["attributes"].get("chapter", "unknown")
-        print(f"Downloading chapter {chapter_number}...")
-        base, pages = self.get_pages(chapter_id)
+        base, pages = self.get_pages(chapter["id"])
         if not pages:
             print(f"No pages found for chapter {chapter_number}")
             return
-
+        # Check if chapter is already downloaded
         chapter_path = os.path.join(self.save_path, f"chapter_{chapter_number}")
+        if os.path.exists(chapter_path) and len(pages) == len(os.listdir(chapter_path)):
+            print(f"Chapter {chapter_number} already downloaded")
+            return
+        # Download chapter
         os.makedirs(chapter_path, exist_ok=True)
-
+        print(f"Downloading chapter {chapter_number}...")
         for page in pages:
             page_url = f"{base}/{page}"
             self.download_image(page_url, os.path.join(chapter_path, page))
